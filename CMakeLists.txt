@@ -147,11 +147,7 @@ include_directories(
 # Declare a C++ executable
 # With catkin_make all packages are built within a single CMake context
 # The recommended prefix ensures that target names across packages don't collide
-add_executable(pose_prediction src/pose_prediction.cpp)
 add_executable(cloud_solve src/cloud_solve.cpp)
-add_executable(canny_edge src/canny_edge.cpp)
-add_executable(PnP_solve src/PnP_solve.cpp)
-add_executable(HSV_solve src/HSV_solve.cpp)
 add_executable(cloud_save src/cloud_save.cpp)
 add_executable(tf_publisher src/tf_publisher.cpp)
 add_executable(cloud_segment src/cloud_segment.cpp)
@@ -168,23 +164,8 @@ add_executable(temp_prediction src/temp_prediction.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # Specify libraries to link a library or executable target against
-target_link_libraries(pose_prediction
-  ${catkin_LIBRARIES}
-)
 target_link_libraries(cloud_solve
   ${catkin_LIBRARIES}
-)
-target_link_libraries(canny_edge
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
-target_link_libraries(PnP_solve
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
-target_link_libraries(HSV_solve
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
 )
 target_link_libraries(cloud_save
   ${catkin_LIBRARIES}
