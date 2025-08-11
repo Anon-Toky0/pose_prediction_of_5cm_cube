@@ -1,0 +1,7 @@
+<launch>
+    <param name="/path_of_model" value="$(find pose_prediction)/best.pt"/> 
+    <node pkg="pose_prediction" type="yolo_detect.py" name="yolo_detect"/>
+    <node pkg="pose_prediction" type="PnP_solve" name="PnP_solve" output="screen">
+        <param name="/low_threshold" value="10"/>
+    </node>
+</launch>

@@ -1,0 +1,12 @@
+<launch>
+    <!-- TF发布节点 - 用于验证配准结果 -->
+    <node pkg="pose_prediction" type="tf_publisher" name="tf_publisher" output="screen">
+        <!-- 坐标系配置 -->
+        <param name="base_frame" value="camera_aligned_depth_to_color_frame" />
+        <param name="target_frame" value="camera_result" />
+        
+        <!-- 发布设置 -->
+        <param name="publish_tf_on_success_only" value="true" />  <!-- 仅在检测成功时发布TF -->
+        <param name="publish_rate" value="10.0" />  <!-- 发布频率 10Hz -->
+    </node>
+</launch> 

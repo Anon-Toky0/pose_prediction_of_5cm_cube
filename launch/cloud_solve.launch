@@ -1,0 +1,5 @@
+<launch>
+    <param name="/path_of_model" value="$(find pose_prediction)/best.pt"/> 
+    <node pkg="pose_prediction" type="yolo_detect.py" name="yolo_detect"/>
+    <node pkg="pose_prediction" type="cloud_solve" name="cloud_solve" output="screen" />
+</launch>

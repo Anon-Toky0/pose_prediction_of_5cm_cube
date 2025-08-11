@@ -1,0 +1,23 @@
+<launch>
+    <include file="$(find pose_prediction)/launch/rs_camera.launch" />
+
+    <param name="/path_of_model" value="$(find pose_prediction)/segments.pt"/> 
+    <node pkg="pose_prediction" type="yolo_seg.py" name="yolo_seg" >
+        
+    </node>
+    <node pkg="pose_prediction" type="cloud_segment" name="cloud_segment" output="screen" />
+    
+    <!-- TF发布节点 - 用于验证配准结果 -->
+    <node pkg="pose_prediction" type="tf_publisher" name="tf_publisher" output="screen">
+        <!-- 坐标系配置 -->
+        <param name="base_frame" value="camera_color_optical_frame" />
+        <param name="target_frame" value="camera_result" />
+        
+        <!-- 发布设置 -->
+        <param name="publish_tf_on_success_only" value="true" />
+        <param name="publish_rate" value="10.0" />
+    </node>
+    
+    <!-- RViz可视化 -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find pose_prediction)/rviz/pose_prediction.rviz" />
+</launch> 

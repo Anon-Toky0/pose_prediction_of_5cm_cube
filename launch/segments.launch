@@ -1,0 +1,7 @@
+<launch>
+    <param name="/path_of_model" value="$(find pose_prediction)/segments.pt"/> 
+    <node pkg="pose_prediction" type="yolo_seg.py" name="yolo_seg" >
+        
+    </node>
+    <node pkg="pose_prediction" type="cloud_segment" name="cloud_segment" output="screen" />
+</launch>
