@@ -66,12 +66,11 @@ add_message_files(
   PoseDetectionRes.msg
 )
 
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+# Generate services in the 'srv' folder
+add_service_files(
+  FILES
+  image2yoloseg.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -151,6 +150,7 @@ add_executable(cloud_solve src/cloud_solve.cpp)
 add_executable(cloud_save src/cloud_save.cpp)
 add_executable(tf_publisher src/tf_publisher.cpp)
 add_executable(cloud_segment src/cloud_segment.cpp)
+add_executable(cloud_segment_sync src/cloud_segment_sync.cpp)
 add_executable(temp_prediction src/temp_prediction.cpp)
 
 ## Rename C++ executable without prefix
@@ -174,6 +174,10 @@ target_link_libraries(tf_publisher
   ${catkin_LIBRARIES}
 )
 target_link_libraries(cloud_segment
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+target_link_libraries(cloud_segment_sync
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
