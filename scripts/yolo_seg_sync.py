@@ -19,11 +19,12 @@ class YoloSegmenter:
         self.image_publish = rospy.Publisher("/pose_prediction/yolo_seg", Image, queue_size=1)
         
     def image_inferrence(self, request: image2yolosegRequest):
+        mask_msg = Image()
         try:
             cv_image = self.bridge.imgmsg_to_cv2(request.input, desired_encoding='bgr8')
         except cv_bridge.CvBridgeError as e:
             rospy.logerr('CvBridgeError: {}'.format(e))
-            return
+            return image2yolosegResponse(mask_msg)
         
         results: typing.List[ultralytics.engine.results.Results] = self.model(cv_image)
         
@@ -47,15 +48,17 @@ class YoloSegmenter:
                     # 在原始图像上绘制掩码（用于可视化）
                     cv2.fillPoly(cv_image, [mask.astype(int)], (0, 255, 0))
         
+        
         # 发布合成掩码
         try:
             mask_msg = self.bridge.cv2_to_imgmsg(combined_mask, encoding='mono8')
-            self.image_publish.publish(mask_msg)
-            cv2.imshow('Segmented Image', combined_mask)
-            cv2.waitKey(1)
-            return image2yolosegResponse(mask_msg)
         except cv_bridge.CvBridgeError as e:
             rospy.logerr('CvBridgeError when publishing mask: {}'.format(e))
+        finally:
+            return image2yolosegResponse(mask_msg)
+        
+    def loop(self):
+        rospy.spin()
         
         
     
@@ -65,8 +68,8 @@ class YoloSegmenter:
 def main():
     rospy.init_node('yolo_segmenter', anonymous=False)
     seg = YoloSegmenter()
-    rospy.spin()
-    
+    seg.loop()
+
 
 if __name__ == '__main__':
     main()

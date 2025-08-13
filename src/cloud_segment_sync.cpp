@@ -28,10 +28,8 @@ void camera_info_callback(const sensor_msgs::CameraInfo::ConstPtr& cam_info_msg)
     cam_model.fromCameraInfo(*cam_info_msg);
 }
 
+ros::ServiceClient image_inferrence_client;
 void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sensor_msgs::PointCloud2::ConstPtr& cloud_message) {
-    static ros::ServiceClient image_inferrence_client = ros::NodeHandle().serviceClient<pose_prediction::image2yoloseg>("/pose_prediction/image_inferrence");
-    image_inferrence_client.waitForExistence();
-
     pose_prediction::image2yoloseg image_to_yolo_seg;
 
     image_to_yolo_seg.request.input = *image_message;
@@ -41,6 +39,11 @@ void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sens
         return;
     }
 
+    if (image_to_yolo_seg.response.output.data.empty()) {
+        ROS_WARN("image inference failed");
+        return;
+    }
+    ROS_INFO("Received image");
     cv_bridge::CvImagePtr cv_image;
     try {
         cv_image = cv_bridge::toCvCopy(image_to_yolo_seg.response.output, sensor_msgs::image_encodings::MONO8);
@@ -116,7 +119,7 @@ void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sens
 
     // 分割参数设置
     int max_planes = 3;          // 最大分割平面数量
-    int min_plane_points = 5000;  // 平面最小点数量（过滤噪声）
+    int min_plane_points = 1000;  // 平面最小点数量（过滤噪声）
     int plane_count = 0;         // 当前分割平面计数
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr center_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -210,6 +213,8 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "cloud_segment_node");
     ros::NodeHandle nh;
     ros::Subscriber cam_info_sub = nh.subscribe("/camera/color/camera_info", 1, camera_info_callback);
+    image_inferrence_client = ros::NodeHandle().serviceClient<pose_prediction::image2yoloseg>("/pose_prediction/image_inferrence");
+    image_inferrence_client.waitForExistence();
 
     message_filters::Subscriber<sensor_msgs::Image> img_sub(nh, "/camera/color/image_raw", 1);
     message_filters::Subscriber<sensor_msgs::PointCloud2> cloud_sub(nh, "/camera/depth/color/points", 1);
@@ -217,7 +222,6 @@ int main(int argc, char** argv) {
     sync.registerCallback(boost::bind(&sync_callback, _1, _2));
 
     ros::Rate rate(5.0);
-
 
     ros::Publisher pose_pub = nh.advertise<pose_prediction::PoseDetectionRes>("/pose_prediction/pose_result", 1);
     while (ros::ok()) {
@@ -312,6 +316,25 @@ int main(int argc, char** argv) {
             result.pose.orientation.z = quaternion.z();
             result.pose.orientation.w = quaternion.w();
 
+        } else if (plane_equations.size() == 1) {
+            long double center[3] = { 0, 0, 0 };
+            if (plane_equations[0][2] > 0) {
+                center[0] += (plane_equations[0][0] * 0.025 + plane_normals[0][0]);
+                center[1] += (plane_equations[0][1] * 0.025 + plane_normals[0][1]);
+                center[2] += (plane_equations[0][2] * 0.025 + plane_normals[0][2]);
+            } else {
+                center[0] += (-plane_equations[0][0] * 0.025 + plane_normals[0][0]);
+                center[1] += (-plane_equations[0][1] * 0.025 + plane_normals[0][1]);
+                center[2] += (-plane_equations[0][2] * 0.025 + plane_normals[0][2]);
+            }
+            result.pose.position.x = center[0];
+            result.pose.position.y = center[1];
+            result.pose.position.z = center[2];
+
+            result.pose.orientation.x = 0.0;
+            result.pose.orientation.y = 0.0;
+            result.pose.orientation.z = 0.0;
+            result.pose.orientation.w = 1.0;
         } else {
             result.success.data = false;
         }

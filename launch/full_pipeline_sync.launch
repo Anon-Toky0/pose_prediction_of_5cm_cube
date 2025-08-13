@@ -2,7 +2,7 @@
     <!-- <include file="$(find pose_prediction)/launch/rs_camera.launch" /> -->
 
     <param name="/path_of_model" value="$(find pose_prediction)/segments.pt"/> 
-    <node pkg="pose_prediction" type="yolo_seg_sync.py" name="yolo_seg_sync" >
+    <node pkg="pose_prediction" type="yolo_seg_sync.py" name="yolo_seg_sync">
         
     </node>
     <node pkg="pose_prediction" type="cloud_segment_sync" name="cloud_segment_sync" output="screen" />
