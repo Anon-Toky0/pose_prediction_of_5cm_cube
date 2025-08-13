@@ -43,7 +43,7 @@ void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sens
 
     cv_bridge::CvImagePtr cv_image;
     try {
-        cv_image = cv_bridge::toCvCopy(image_to_yolo_seg.response.output, sensor_msgs::image_encodings::BGR8);
+        cv_image = cv_bridge::toCvCopy(image_to_yolo_seg.response.output, sensor_msgs::image_encodings::MONO8);
     } catch (cv_bridge::Exception e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
@@ -54,18 +54,22 @@ void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sens
     plane_equations.clear();
     plane_normals.clear();
 
+    static ros::Publisher mask_seg_pub = ros::NodeHandle().advertise<sensor_msgs::PointCloud2>("/pose_prediction/mask_seg_cloud", 1);
     static ros::Publisher cloud_pub = ros::NodeHandle().advertise<sensor_msgs::PointCloud2>("/pose_prediction/output_cloud", 1);
 
     if (mask.empty()) {
         return;
     }
+    
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*cloud_message, *cloud);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
-    int image_width = image_message->width;
-    int image_height = image_message->height;
+    if (cloud->empty()) {
+        ROS_WARN("No cloud points in topic");
+        return;
+    }
 
     for (const pcl::PointXYZ& point : cloud->points) {
         if (!std::isfinite(point.x) || !std::isfinite(point.y) || !std::isfinite(point.z)) {
@@ -80,7 +84,7 @@ void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sens
         int u = static_cast<int>(uv.x);
         int v = static_cast<int>(uv.y);
 
-        if (mask.at<uchar>(v, u) == 0 || u < 0 || u >= image_width || v < 0 || v >= image_height) {
+        if (mask.at<uchar>(v, u) == 0 || u < 0 || u >= image_message->width || v < 0 || v >= image_message->height) {
             continue;
         }
 
@@ -94,8 +98,14 @@ void sync_callback(const sensor_msgs::Image::ConstPtr& image_message, const sens
 
     static ros::Publisher center_pub = ros::NodeHandle().advertise<sensor_msgs::PointCloud2>("/center_point", 1);
 
+    sensor_msgs::PointCloud2 mask_seg_cloud;
+    pcl::toROSMsg(*filtered_cloud, mask_seg_cloud);
+    mask_seg_cloud.header = cloud_message->header;
+    mask_seg_pub.publish(mask_seg_cloud);
+
+
     if (filtered_cloud->empty()) {
-        ROS_WARN("Received empty point cloud");
+        ROS_WARN("filtered cloud empty");
         return;
     }
 

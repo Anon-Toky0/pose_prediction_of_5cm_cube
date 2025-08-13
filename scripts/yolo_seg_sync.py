@@ -16,6 +16,7 @@ class YoloSegmenter:
         self.bridge = cv_bridge.CvBridge()
         self.model = ultralytics.YOLO(str(rospy.get_param('/path_of_model')))
         self.image_inferrence_client = rospy.Service("/pose_prediction/image_inferrence", image2yoloseg, self.image_inferrence)
+        self.image_publish = rospy.Publisher("/pose_prediction/yolo_seg", Image, queue_size=1)
         
     def image_inferrence(self, request: image2yolosegRequest):
         try:
@@ -49,12 +50,14 @@ class YoloSegmenter:
         # 发布合成掩码
         try:
             mask_msg = self.bridge.cv2_to_imgmsg(combined_mask, encoding='mono8')
+            self.image_publish.publish(mask_msg)
+            cv2.imshow('Segmented Image', combined_mask)
+            cv2.waitKey(1)
             return image2yolosegResponse(mask_msg)
         except cv_bridge.CvBridgeError as e:
             rospy.logerr('CvBridgeError when publishing mask: {}'.format(e))
         
-        cv2.imshow('Segmented Image', cv_image)
-        cv2.waitKey(1)
+        
     
     
     

@@ -50,11 +50,7 @@ public:
         last_transform_.transform.rotation.z = 0.0;
         last_transform_.transform.rotation.w = 1.0;
         
-        ROS_INFO("TF发布节点已启动");
-        ROS_INFO("基坐标系: %s", base_frame_.c_str());
-        ROS_INFO("目标坐标系: %s", target_frame_.c_str());
-        ROS_INFO("仅在检测成功时发布TF: %s", publish_tf_on_success_only_ ? "是" : "否");
-        ROS_INFO("发布频率: %.1f Hz", publish_rate_);
+        ROS_INFO("TF node start");
     }
     
     void poseCallback(const pose_prediction::PoseDetectionRes::ConstPtr& msg) {
@@ -74,10 +70,10 @@ public:
             transform_stamped.transform.translation.z = msg->pose.position.z;
             transform_stamped.transform.rotation = msg->pose.orientation;
             
-            ROS_INFO("接收到成功的位姿检测结果:");
-            ROS_INFO("  位置: (%.3f, %.3f, %.3f)", 
+            ROS_INFO("received successful result:");
+            ROS_INFO("  position: (%.3f, %.3f, %.3f)", 
                      msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
-            ROS_INFO("  姿态: (%.3f, %.3f, %.3f, %.3f)", 
+            ROS_INFO("  pose: (%.3f, %.3f, %.3f, %.3f)", 
                      msg->pose.orientation.x, msg->pose.orientation.y, 
                      msg->pose.orientation.z, msg->pose.orientation.w);
             
@@ -87,8 +83,8 @@ public:
             tf2::Matrix3x3 m(q);
             double roll, pitch, yaw;
             m.getRPY(roll, pitch, yaw);
-            ROS_INFO("  欧拉角 (RPY): (%.3f, %.3f, %.3f) 弧度", roll, pitch, yaw);
-            ROS_INFO("  欧拉角 (RPY): (%.1f, %.1f, %.1f) 度", 
+            ROS_INFO("  Eolur (RPY): (%.3f, %.3f, %.3f) rad", roll, pitch, yaw);
+            ROS_INFO("  Eolur (RPY): (%.1f, %.1f, %.1f) du", 
                      roll * 180.0 / M_PI, pitch * 180.0 / M_PI, yaw * 180.0 / M_PI);
         } else {
             // 检测失败，使用单位变换
@@ -100,7 +96,7 @@ public:
             transform_stamped.transform.rotation.z = 0.0;
             transform_stamped.transform.rotation.w = 1.0;
             
-            ROS_WARN("位姿检测失败，发布单位变换");
+            ROS_WARN("detected failed");
         }
         
         // 更新最后的变换
@@ -130,13 +126,10 @@ public:
             // 每5秒输出一次调试信息
             static ros::Time last_debug_time = ros::Time::now();
             if ((ros::Time::now() - last_debug_time).toSec() > 5.0) {
-                ROS_DEBUG("发布TF变换: %s -> %s", 
-                         transform.header.frame_id.c_str(), 
-                         transform.child_frame_id.c_str());
                 last_debug_time = ros::Time::now();
             }
         } catch (const std::exception& e) {
-            ROS_ERROR("发布TF变换失败: %s", e.what());
+            ROS_ERROR("release TF failed: %s", e.what());
         }
     }
 };
@@ -148,7 +141,7 @@ int main(int argc, char** argv) {
         TFPublisherNode node;
         ros::spin();
     } catch (const std::exception& e) {
-        ROS_ERROR("TF发布节点运行异常: %s", e.what());
+        ROS_ERROR("TF publisher node failed: %s", e.what());
         return 1;
     }
     
